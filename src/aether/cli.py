@@ -291,7 +291,7 @@ def build_parser() -> argparse.ArgumentParser:
     rp.set_defaults(func=cmd_report)
 
     ui = sub.add_parser("ui", help="Local desk web UI")
-    ui.add_argument("--host", default="127.0.0.1")
+    ui.add_argument("--host", default="0.0.0.0")
     ui.add_argument("--port", type=int, default=8791)
     ui.set_defaults(func=cmd_ui)
     return p

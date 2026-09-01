@@ -4,32 +4,67 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Aether Desk — paper only</title>
+  <meta name="theme-color" content="#12141a">
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="stylesheet" href="/static/desk.css">
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 </head>
-<body hx-get="/partials/desk" hx-trigger="every 15s" hx-swap="outerHTML" hx-select="body" hx-target="body">
+<body>
   <div class="banner">PAPER TRADING ONLY — no live orders — hypotheses, not advice</div>
   <header>
-    <h1>Aether Desk</h1>
-    <div class="meta">scan {{ scan_as_of }} · refresh 15s · UI :8791 (Hermes stays on :8787)</div>
+    <h1>Aether Desk <span id="live-dot" class="dot on" title="live poll"></span></h1>
+    <div class="meta">
+      <span id="clock">{{ now }}</span>
+      · tape <span id="scan-asof">{{ scan_as_of }}</span>
+      · poll 2s · :8791
+    </div>
   </header>
+
+  <div class="kpis strip">
+    <div><span>Equity</span><strong id="kpi-eq">${{ "%.2f"|format(book.equity) }}</strong></div>
+    <div><span>Cash</span><strong id="kpi-cash">${{ "%.2f"|format(book.cash) }}</strong></div>
+    <div><span>Day P&amp;L</span><strong id="kpi-day" class="{{ 'up' if book.day_pnl>=0 else 'down' }}">{{ "%+.2f"|format(book.day_pnl) }} ({{ "%+.2f"|format(book.day_pnl_pct) }}%)</strong></div>
+    <div><span>Total vs start</span><strong id="kpi-total" class="{{ 'up' if book.total_pnl>=0 else 'down' }}">{{ "%+.2f"|format(book.total_pnl) }}</strong></div>
+    <div><span>Open / risk</span><strong><span id="kpi-open">{{ book.n_open }}</span> · <span id="kpi-risk">${{ "%.2f"|format(book.open_risk_usd) }}</span></strong></div>
+    <div><span>Halt</span><strong id="kpi-halt" class="{{ 'down' if book.halt_daily or book.halt_weekly else 'up' }}">{% if book.halt_daily or book.halt_weekly %}HALT{% else %}open{% endif %}</strong></div>
+  </div>
+
   <div class="grid">
     <section class="panel">
-      <h2>Book</h2>
-      <div class="kpis">
-        <div><span>Equity</span>${{ "%.2f"|format(book.equity) }}</div>
-        <div><span>Cash</span>${{ "%.2f"|format(book.cash) }}</div>
-        <div><span>Day P&amp;L</span>
-          <span class="{{ 'up' if book.day_pnl>=0 else 'down' }}">{{ "%+.2f"|format(book.day_pnl) }} ({{ "%+.2f"|format(book.day_pnl_pct) }}%)</span>
-        </div>
-        <div><span>Open risk</span>${{ "%.2f"|format(book.open_risk_usd) }}</div>
-        <div><span>Halt</span>
-          {% if book.halt_daily or book.halt_weekly %}HALT{% else %}open{% endif %}
-        </div>
+      <h2>Progress vs $100k start</h2>
+      <div class="prog">
+        <div id="prog-bar" class="bar {{ 'upbg' if book.equity >= book.starting_equity else 'downbg' }}" style="width: {{ ((book.equity / book.starting_equity) * 100) if book.starting_equity else 100 }}%"></div>
       </div>
+      <p class="meta" id="prog-label">${{ "%.0f"|format(book.equity) }} / ${{ "%.0f"|format(book.starting_equity) }} start</p>
+      <svg id="spark" class="spark" viewBox="0 0 320 64" aria-label="equity curve"></svg>
+      <div class="chips">
+        <div><span>Closed</span><b id="stat-closed">{{ stats.n_closed }}</b></div>
+        <div><span>Fills</span><b id="stat-fills">{{ stats.n_fills }}</b></div>
+        <div><span>Hit rate</span><b id="stat-hit">{% if stats.hit_rate is none %}—{% else %}{{ "%.0f"|format(stats.hit_rate) }}%{% endif %}</b></div>
+        <div><span>W / L</span><b id="stat-wl">{{ stats.n_wins }} / {{ stats.n_losses }}</b></div>
+        <div><span>Avg closed</span><b id="stat-avg">{% if stats.avg_pnl is none %}—{% else %}${{ "%.2f"|format(stats.avg_pnl) }}{% endif %}</b></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Hypotheses</h2>
+      <div id="hyp-list">
+        {% if hypotheses %}
+          {% for h in hypotheses %}
+            <p><strong>{{ h.id }} {{ h.symbol }}</strong> {{ h.direction }} · {{ h.horizon }} · conf {{ h.confidence }}<br>
+            stop {{ h.stop }} target {{ h.target }} R {{ h.r_multiple }}<br>
+            <span class="meta">{{ h.invalidation }}</span></p>
+          {% endfor %}
+        {% else %}
+          <p>None. Do nothing is valid.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <h2>Open paper positions</h2>
       <table>
-        <thead><tr><th>id</th><th>sym</th><th>side</th><th>qty</th><th>entry</th><th>last</th><th>uPnL</th></tr></thead>
-        <tbody>
+        <thead><tr><th>id</th><th>sym</th><th>side</th><th>qty</th><th>entry</th><th>last</th><th>stop</th><th>uPnL</th></tr></thead>
+        <tbody id="pos-body">
         {% if book.positions %}
           {% for p in book.positions %}
           <tr>
@@ -39,35 +74,48 @@
             <td>{{ p.qty }}</td>
             <td>{{ "%.4g"|format(p.entry) }}</td>
             <td>{{ "%.4g"|format(p.last) }}</td>
+            <td>{% if p.stop is none %}—{% else %}{{ "%.4g"|format(p.stop) }}{% endif %}</td>
             <td class="{{ 'up' if p.unrealized_usd>=0 else 'down' }}">{{ "%+.2f"|format(p.unrealized_usd) }}</td>
           </tr>
           {% endfor %}
         {% else %}
-          <tr><td colspan="7">No open paper positions.</td></tr>
+          <tr><td colspan="8">No open paper positions.</td></tr>
         {% endif %}
         </tbody>
       </table>
-      <p class="meta">Exposure by class: {{ book.exposure_by_class or "flat" }}</p>
-    </section>
-
-    <section class="panel">
-      <h2>Hypotheses / pending</h2>
-      {% if hypotheses %}
-        {% for h in hypotheses %}
-          <p><strong>{{ h.id }} {{ h.symbol }}</strong> {{ h.direction }} · {{ h.horizon }} · conf {{ h.confidence }}<br>
-          stop {{ h.stop }} target {{ h.target }} R {{ h.r_multiple }}<br>
-          <span class="meta">{{ h.invalidation }}</span></p>
-        {% endfor %}
-      {% else %}
-        <p>None. Do nothing is valid.</p>
-      {% endif %}
+      <p class="meta" id="exposure">Exposure by class: {{ book.exposure_by_class or "flat" }}</p>
     </section>
 
     <section class="panel wide">
+      <h2>Trade blotter</h2>
+      <table>
+        <thead><tr><th>when</th><th>fill</th><th>ticket</th><th>sym</th><th>side/qty</th><th>px</th><th>reason</th><th>pnl</th></tr></thead>
+        <tbody id="tr-body">
+        {% if trades %}
+          {% for t in trades %}
+          <tr>
+            <td>{{ t.ts }}</td>
+            <td>{{ t.id }}</td>
+            <td>{{ t.ticket_id }}</td>
+            <td>{{ t.symbol }}</td>
+            <td>{{ t.side }} {{ t.qty }}</td>
+            <td>{% if t.price_num is none %}—{% else %}{{ "%.4g"|format(t.price_num) }}{% endif %}</td>
+            <td>{{ t.reason }}</td>
+            <td class="{{ '' if t.pnl_num is none else ('up' if t.pnl_num>=0 else 'down') }}">{% if t.pnl_num is none %}—{% else %}{{ "%+.2f"|format(t.pnl_num) }}{% endif %}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="8">No paper fills yet. Book is flat at start.</td></tr>
+        {% endif %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel">
       <h2>Watchlist</h2>
       <table>
         <thead><tr><th>sym</th><th>last</th><th>% day</th><th>% week</th><th>regime</th><th>quality</th></tr></thead>
-        <tbody>
+        <tbody id="q-body">
         {% for q in quotes %}
           <tr>
             <td>{{ q.symbol }}</td>
@@ -78,20 +126,15 @@
             <td class="{{ q.quality }}">{{ q.quality }}</td>
           </tr>
         {% else %}
-          <tr><td colspan="6">No scan yet. Run <code>python -m aether scan</code>.</td></tr>
+          <tr><td colspan="6">No scan yet.</td></tr>
         {% endfor %}
         </tbody>
       </table>
     </section>
 
     <section class="panel">
-      <h2>Latest briefing</h2>
-      <div class="brief">{{ brief_html | safe }}</div>
-    </section>
-
-    <section class="panel">
       <h2>Activity</h2>
-      <div class="activity">
+      <div class="activity" id="act-list">
         {% for a in activity %}
           <div>{{ a.ts }} · {{ a.kind }} — {{ a.message }}</div>
         {% else %}
@@ -99,6 +142,12 @@
         {% endfor %}
       </div>
     </section>
+
+    <section class="panel wide">
+      <h2>Latest briefing</h2>
+      <div class="brief">{{ brief_html | safe }}</div>
+    </section>
   </div>
+  <script src="/static/desk.js"></script>
 </body>
 </html>

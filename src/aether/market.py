@@ -264,3 +264,94 @@ def marks_from_quotes(quotes: dict[str, Quote]) -> dict[str, float]:
 
 def usd_quoted_map() -> dict[str, bool]:
     return {str(r["id"]): bool(r.get("usd_quoted", True)) for r in config.all_symbol_rows()}
+
+
+def refresh_lasts() -> dict[str, float]:
+    """Patch last/pct_day on the snapshot from a single yfinance pull. Never invents."""
+    snap = load_snapshot()
+    quotes_raw: dict[str, Any] = dict(snap.get("quotes") or {})
+    rows = {str(r["id"]): r for r in config.all_symbol_rows()}
+    yahoo_to_id = {str(r.get("yahoo")): str(r["id"]) for r in rows.values() if r.get("yahoo")}
+    tickers = list(yahoo_to_id.keys())
+    if not tickers:
+        return marks_from_quotes(
+            {k: Quote(**{f: v.get(f) for f in Quote.__dataclass_fields__}) for k, v in quotes_raw.items() if isinstance(v, dict)}
+        )
+    updated: dict[str, float] = {}
+    try:
+        import yfinance as yf
+
+        data = yf.download(
+            tickers,
+            period="5d",
+            interval="1d",
+            auto_adjust=True,
+            progress=False,
+            threads=True,
+            group_by="ticker",
+        )
+    except Exception as exc:
+        log("data", f"live last-print refresh failed: {exc}")
+        return {k: v.get("last") for k, v in quotes_raw.items() if isinstance(v, dict) and v.get("last") is not None}
+
+    def _closes(sym_yahoo: str) -> list[float]:
+        try:
+            if getattr(data, "empty", True):
+                return []
+            if len(tickers) == 1:
+                col = data["Close"]
+            else:
+                col = data[sym_yahoo]["Close"] if sym_yahoo in data.columns.get_level_values(0) else None
+            if col is None:
+                return []
+            return [float(x) for x in col.dropna().tolist()]
+        except Exception:
+            return []
+
+    as_of = _now_iso()
+    for yahoo, sid in yahoo_to_id.items():
+        closes = _closes(yahoo)
+        if len(closes) < 1:
+            continue
+        last = closes[-1]
+        prev = closes[-2] if len(closes) >= 2 else (quotes_raw.get(sid) or {}).get("prev_close")
+        q = dict(quotes_raw.get(sid) or {})
+        q["symbol"] = sid
+        q["last"] = last
+        if prev:
+            q["prev_close"] = prev
+            q["pct_day"] = pct_change(last, float(prev))
+        q["source"] = f"yfinance:{yahoo}"
+        q["as_of"] = as_of
+        q["quality"] = "ok"
+        q["reason"] = ""
+        quotes_raw[sid] = q
+        updated[sid] = last
+
+    # persist quotes
+    live: dict[str, Quote] = {}
+    for sid, q in quotes_raw.items():
+        if not isinstance(q, dict):
+            continue
+        try:
+            live[sid] = Quote(**{k: q.get(k) for k in Quote.__dataclass_fields__})
+        except TypeError:
+            continue
+    if live:
+        save_snapshot(live)
+        # keep scan.json marks in sync so the book marks-to-market
+        from aether.paths import scan_snapshot_path
+
+        sp = scan_snapshot_path()
+        if sp.exists():
+            try:
+                scan = json.loads(sp.read_text(encoding="utf-8"))
+                scan["marks"] = {**dict(scan.get("marks") or {}), **updated}
+                scan["quotes"] = {k: v.to_dict() for k, v in live.items()}
+                scan["as_of"] = as_of
+                tmp = sp.with_suffix(".tmp")
+                tmp.write_text(json.dumps(scan, indent=2, default=str), encoding="utf-8")
+                tmp.replace(sp)
+            except Exception:
+                pass
+    return updated

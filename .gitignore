@@ -13,5 +13,14 @@ htmlcov/
 data/cache/
 data/raw/
 *.log
+ledger/phone_token.txt
+phone/assets/bootstrap.json
+phone/.dart_tool/
+phone/.idea/
+phone/build/
+phone/.flutter-plugins*
+phone/**/GeneratedPluginRegistrant.*
+*.apk
+*.aab
 .DS_Store
 Thumbs.db

@@ -28,6 +28,10 @@ python -m venv .venv
 
 Then open http://127.0.0.1:8791/
 
+**Desktop:** double-click **Aether Desk** on the Desktop (or `Start Aether Desk.bat`). It boots the local UI on `:8791` if needed and opens the live blotter. Hermes stays on `:8787`.
+
+**Phone (A16):** install `phone/build/app/outputs/flutter-apk/app-release.apk`. Same Wi-Fi as the PC, or Tailscale when both are logged in. LAN callers need the token in `ledger/phone_token.txt` (not in git). Run `Allow Phone Access.bat` once so Windows Firewall allows port 8791 on the private profile. Loopback (the desktop shortcut) does not need the token.
+
 Paper account starts at **100,000 USD cash**, no positions.
 
 ## CLI
