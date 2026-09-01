@@ -1,0 +1,16 @@
+{
+  "schema": "aether.account.v1",
+  "currency": "USD",
+  "starting_equity": 100000.0,
+  "cash": 100000.0,
+  "day_start_equity": 100000.0,
+  "week_start_equity": 100000.0,
+  "day_start_date": "2026-09-01",
+  "week_start_date": "2026-08-31",
+  "halt_daily": false,
+  "halt_weekly": false,
+  "next_ticket_id": 1,
+  "positions": [],
+  "pending": [],
+  "updated_at": "2026-09-01T18:52:32.112191+00:00"
+}

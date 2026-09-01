@@ -1,0 +1,47 @@
+# Local desk clock. Edit timezone to match the operator.
+timezone: America/Chicago
+
+jobs:
+  - id: morning_scan
+    local_time: "06:30"
+    days: [mon, tue, wed, thu, fri]
+    command: python -m aether scan
+    owner_bot: market_scanner
+    notes: Pull tape, ATR, regime, correlation. Refresh last-good snapshots.
+  - id: morning_brief
+    local_time: "07:15"
+    days: [mon, tue, wed, thu, fri]
+    command: python -m aether brief
+    owner_bot: briefing_editor
+    notes: Research + macro + 0–3 hypotheses + human briefing + phone card. Overseer reviews before publish.
+  - id: midday_check
+    local_time: "12:00"
+    days: [mon, tue, wed, thu, fri]
+    command: python -m aether cycle --mode midday
+    owner_bot: overseer
+    notes: Run only if an open position exists or a high-vol event is flagged.
+  - id: us_close
+    local_time: "16:15"
+    days: [mon, tue, wed, thu, fri]
+    command: python -m aether scan --label us_close
+    owner_bot: market_scanner
+    notes: US equity close snapshot. Mark-to-market. Update halt flags.
+  - id: weekly_postmortem
+    local_time: "17:00"
+    days: [sun]
+    command: python -m aether report --weekly
+    owner_bot: overseer
+    notes: Hit rate, avg R, MAE, process errors, one concrete next-week change.
+
+automation:
+  grok_build: |
+    Map each job to `python -m aether cycle` (or the specific command above).
+    A local Windows Task Scheduler / cron entry is optional in v1.
+    Grok Build /loop can call `python -m aether cycle` on an interval.
+  grok_bot: |
+    One Grok Bot routine per job, owned by the named bot constitution in bots/.
+    See SETUP_GROK_BOT.md. Bots share this repo's reports/, ledger/, and config/.
+  grok_automations: |
+    Fallback if the full desk cannot run: a briefing-only automation that
+    instructs Briefing Editor to run `python -m aether brief` and paste the
+    phone card. Never place tickets from an automation.

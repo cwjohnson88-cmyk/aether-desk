@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aether Desk — paper only</title>
+  <link rel="stylesheet" href="/static/desk.css">
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body hx-get="/partials/desk" hx-trigger="every 15s" hx-swap="outerHTML" hx-select="body" hx-target="body">
+  <div class="banner">PAPER TRADING ONLY — no live orders — hypotheses, not advice</div>
+  <header>
+    <h1>Aether Desk</h1>
+    <div class="meta">scan {{ scan_as_of }} · refresh 15s · UI :8791 (Hermes stays on :8787)</div>
+  </header>
+  <div class="grid">
+    <section class="panel">
+      <h2>Book</h2>
+      <div class="kpis">
+        <div><span>Equity</span>${{ "%.2f"|format(book.equity) }}</div>
+        <div><span>Cash</span>${{ "%.2f"|format(book.cash) }}</div>
+        <div><span>Day P&amp;L</span>
+          <span class="{{ 'up' if book.day_pnl>=0 else 'down' }}">{{ "%+.2f"|format(book.day_pnl) }} ({{ "%+.2f"|format(book.day_pnl_pct) }}%)</span>
+        </div>
+        <div><span>Open risk</span>${{ "%.2f"|format(book.open_risk_usd) }}</div>
+        <div><span>Halt</span>
+          {% if book.halt_daily or book.halt_weekly %}HALT{% else %}open{% endif %}
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>id</th><th>sym</th><th>side</th><th>qty</th><th>entry</th><th>last</th><th>uPnL</th></tr></thead>
+        <tbody>
+        {% if book.positions %}
+          {% for p in book.positions %}
+          <tr>
+            <td>{{ p.id }}</td>
+            <td>{{ p.symbol }}</td>
+            <td>{{ p.side }}</td>
+            <td>{{ p.qty }}</td>
+            <td>{{ "%.4g"|format(p.entry) }}</td>
+            <td>{{ "%.4g"|format(p.last) }}</td>
+            <td class="{{ 'up' if p.unrealized_usd>=0 else 'down' }}">{{ "%+.2f"|format(p.unrealized_usd) }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="7">No open paper positions.</td></tr>
+        {% endif %}
+        </tbody>
+      </table>
+      <p class="meta">Exposure by class: {{ book.exposure_by_class or "flat" }}</p>
+    </section>
+
+    <section class="panel">
+      <h2>Hypotheses / pending</h2>
+      {% if hypotheses %}
+        {% for h in hypotheses %}
+          <p><strong>{{ h.id }} {{ h.symbol }}</strong> {{ h.direction }} · {{ h.horizon }} · conf {{ h.confidence }}<br>
+          stop {{ h.stop }} target {{ h.target }} R {{ h.r_multiple }}<br>
+          <span class="meta">{{ h.invalidation }}</span></p>
+        {% endfor %}
+      {% else %}
+        <p>None. Do nothing is valid.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel wide">
+      <h2>Watchlist</h2>
+      <table>
+        <thead><tr><th>sym</th><th>last</th><th>% day</th><th>% week</th><th>regime</th><th>quality</th></tr></thead>
+        <tbody>
+        {% for q in quotes %}
+          <tr>
+            <td>{{ q.symbol }}</td>
+            <td>{% if q.last is none %}UNKNOWN{% else %}{{ "%.6g"|format(q.last) }}{% endif %}</td>
+            <td class="{{ 'up' if (q.pct_day or 0)>=0 else 'down' }}">{% if q.pct_day is none %}UNKNOWN{% else %}{{ "%+.2f"|format(q.pct_day) }}%{% endif %}</td>
+            <td>{% if q.pct_week is none %}UNKNOWN{% else %}{{ "%+.2f"|format(q.pct_week) }}%{% endif %}</td>
+            <td>{{ q.regime }}{% if q.unusual %} · unusual{% endif %}</td>
+            <td class="{{ q.quality }}">{{ q.quality }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6">No scan yet. Run <code>python -m aether scan</code>.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>Latest briefing</h2>
+      <div class="brief">{{ brief_html | safe }}</div>
+    </section>
+
+    <section class="panel">
+      <h2>Activity</h2>
+      <div class="activity">
+        {% for a in activity %}
+          <div>{{ a.ts }} · {{ a.kind }} — {{ a.message }}</div>
+        {% else %}
+          <div>Quiet.</div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</body>
+</html>

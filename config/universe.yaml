@@ -1,0 +1,147 @@
+# Aether Desk universe — edit symbols here. Paper trading only.
+timezone_note: "Decision timeframes are 4h and 1D. 15m/1h are context only."
+
+cash:
+  id: USD
+  class: cash
+  starting_equity: 100000.0
+
+timeframes:
+  - 15m
+  - 1h
+  - 4h
+  - 1D
+decision_timeframes:
+  - 4h
+  - 1D
+
+symbols:
+  - id: EURUSD
+    class: forex
+    yahoo: EURUSD=X
+    stooq: eurusd
+    usd_quoted: true
+    tradable: true
+    cluster: fx_g10
+  - id: GBPUSD
+    class: forex
+    yahoo: GBPUSD=X
+    stooq: gbpusd
+    usd_quoted: true
+    tradable: true
+    cluster: fx_g10
+  - id: USDJPY
+    class: forex
+    yahoo: USDJPY=X
+    stooq: usdjpy
+    usd_quoted: false
+    tradable: true
+    cluster: fx_g10
+  - id: BTC-USD
+    class: crypto
+    yahoo: BTC-USD
+    stooq: btcusd
+    usd_quoted: true
+    tradable: true
+    cluster: usd_risk
+  - id: ETH-USD
+    class: crypto
+    yahoo: ETH-USD
+    stooq: ethusd
+    usd_quoted: true
+    tradable: true
+    cluster: usd_risk
+  - id: SOL-USD
+    class: crypto
+    yahoo: SOL-USD
+    stooq: solusd
+    usd_quoted: true
+    tradable: true
+    cluster: usd_risk
+  - id: SPY
+    class: etf
+    yahoo: SPY
+    stooq: spy.us
+    usd_quoted: true
+    tradable: true
+    cluster: usd_risk
+  - id: QQQ
+    class: etf
+    yahoo: QQQ
+    stooq: qqq.us
+    usd_quoted: true
+    tradable: true
+    cluster: usd_risk
+  - id: NVDA
+    class: equity
+    yahoo: NVDA
+    stooq: nvda.us
+    usd_quoted: true
+    tradable: true
+    cluster: usd_risk
+  - id: AAPL
+    class: equity
+    yahoo: AAPL
+    stooq: aapl.us
+    usd_quoted: true
+    tradable: true
+    cluster: usd_risk
+  - id: MSFT
+    class: equity
+    yahoo: MSFT
+    stooq: msft.us
+    usd_quoted: true
+    tradable: true
+    cluster: usd_risk
+  - id: AMZN
+    class: equity
+    yahoo: AMZN
+    stooq: amzn.us
+    usd_quoted: true
+    tradable: true
+    cluster: usd_risk
+  - id: META
+    class: equity
+    yahoo: META
+    stooq: meta.us
+    usd_quoted: true
+    tradable: true
+    cluster: usd_risk
+  - id: TSLA
+    class: equity
+    yahoo: TSLA
+    stooq: tsla.us
+    usd_quoted: true
+    tradable: true
+    cluster: usd_risk
+  - id: GLD
+    class: etf
+    yahoo: GLD
+    stooq: gld.us
+    usd_quoted: true
+    tradable: true
+    cluster: gold
+  - id: TLT
+    class: etf
+    yahoo: TLT
+    stooq: tlt.us
+    usd_quoted: true
+    tradable: true
+    cluster: rates
+
+# Macro context — scanned for briefing, not ticketed unless also listed above as tradable.
+macro:
+  - id: DXY
+    class: macro
+    yahoo: DX-Y.NYB
+    stooq: dx.f
+    usd_quoted: true
+    tradable: false
+    cluster: dollar
+  - id: US10Y
+    class: macro
+    yahoo: "^TNX"
+    stooq: "10usy.b"
+    usd_quoted: true
+    tradable: false
+    cluster: rates

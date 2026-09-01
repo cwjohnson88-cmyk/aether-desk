@@ -1,0 +1,57 @@
+{
+  "as_of": "2026-09-01T18:52:32.113383+00:00",
+  "ideas": [
+    {
+      "id": "H1",
+      "symbol": "AAPL",
+      "direction": "bull",
+      "horizon": "2\u20135 days",
+      "setup": "AAPL tagged uptrend; positive session print while tagged uptrend. Thesis is continuation, not a chase-at-any-price.",
+      "trigger": "Hold above last print 325.59 on 4h close; do not buy a breakdown through stop.",
+      "entry_zone": "near 325.59 (paper; use next 4h/1D close, not a market-on-print chase)",
+      "stop": 319.033587,
+      "target": 338.702814,
+      "r_multiple": 2.0,
+      "invalidation": "4h close through 319.034 or regime flip away from uptrend.",
+      "confidence": 46,
+      "contrary": "Bears believe this is a bull trap / overbought stretch and that the stop will be tagged first.",
+      "correlation_note": "No open book.",
+      "status": "open"
+    },
+    {
+      "id": "H2",
+      "symbol": "TLT",
+      "direction": "bear",
+      "horizon": "2\u20135 days",
+      "setup": "TLT tagged downtrend; negative session print while tagged downtrend. Thesis is continuation.",
+      "trigger": "Hold below last print 81.835 on 4h close; do not short a squeeze through stop.",
+      "entry_zone": "near 81.835 (paper; use next 4h/1D close, not a market-on-print chase)",
+      "stop": 82.501498,
+      "target": 80.502002,
+      "r_multiple": 2.0,
+      "invalidation": "4h close through 82.5015 or regime flip away from downtrend.",
+      "confidence": 46,
+      "contrary": "Bulls believe this is a washout / oversold stretch and that a squeeze takes out the stop.",
+      "correlation_note": "No open book.",
+      "status": "open"
+    },
+    {
+      "id": "H3",
+      "symbol": "USDJPY",
+      "direction": "bull",
+      "horizon": "2\u20135 days",
+      "setup": "USDJPY tagged uptrend; positive session print while tagged uptrend. Thesis is continuation, not a chase-at-any-price.",
+      "trigger": "Hold above last print 160.216 on 4h close; do not buy a breakdown through stop.",
+      "entry_zone": "near 160.216 (paper; use next 4h/1D close, not a market-on-print chase)",
+      "stop": 159.363754,
+      "target": 161.920503,
+      "r_multiple": 2.0,
+      "invalidation": "4h close through 159.364 or regime flip away from uptrend.",
+      "confidence": 46,
+      "contrary": "Bears believe this is a bull trap / overbought stretch and that the stop will be tagged first.",
+      "correlation_note": "No open book.",
+      "status": "open"
+    }
+  ],
+  "disclaimer": "Hypotheses for paper practice. Not advice. Not live orders."
+}

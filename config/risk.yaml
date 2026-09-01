@@ -1,0 +1,33 @@
+# Aether Desk risk — human approval required to change these limits.
+# PAPER TRADING ONLY. These numbers never authorize live orders.
+
+paper_only: true
+starting_equity: 100000.0
+currency: USD
+
+max_risk_pct_per_idea: 2.0
+max_correlated_positions: 6
+max_open_positions: 6
+daily_loss_halt_pct: 3.0
+weekly_loss_halt_pct: 6.0
+max_average_down: 1
+martingale: false
+require_stop: true
+max_hypotheses_per_cycle: 3
+
+spreads_bps:
+  forex: 1.0
+  crypto: 5.0
+  equity: 2.0
+  etf: 2.0
+  macro: 2.0
+  cash: 0.0
+
+slippage_bps: 2.0
+
+clusters:
+  fx_g10: [EURUSD, GBPUSD, USDJPY]
+  usd_risk: [BTC-USD, ETH-USD, SOL-USD, SPY, QQQ, NVDA, AAPL, MSFT, AMZN, META, TSLA]
+  gold: [GLD]
+  rates: [TLT, US10Y]
+  dollar: [DXY]
